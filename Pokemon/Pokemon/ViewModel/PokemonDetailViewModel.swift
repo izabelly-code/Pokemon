@@ -1,5 +1,6 @@
 import Foundation
 
+@MainActor
 class PokemonDetailViewModel: ObservableObject {
     @Published var detail: Pokemon?
 
@@ -7,7 +8,11 @@ class PokemonDetailViewModel: ObservableObject {
 
     func loadDetails(for pokemon: PokemonItem) async {
         do {
-            self.detail = try await service.fetchPokemonDetail(from: pokemon.url)
+            let result = try await service.fetchPokemonDetail(from: pokemon.url)
+            
+            await MainActor.run {
+                        self.detail = result
+            }
         } catch {
             print("Erro ao carregar detalhes: \(error)")
         }

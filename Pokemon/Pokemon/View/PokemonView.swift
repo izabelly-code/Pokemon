@@ -3,6 +3,7 @@ import SwiftUI
 struct PokemonView: View {
     @Environment(\.modelContext) private var context
     @StateObject private var viewModel: PokemonViewModel
+    @State private var selectedPokemon: PokemonItem? = nil
     private var userEmail: String
 
     let columns = [
@@ -17,49 +18,38 @@ struct PokemonView: View {
 
     var body: some View {
         NavigationView {
-            List {
-                Section {
-                    LazyVGrid(columns: columns, spacing: 16) {
-                        ForEach(viewModel.pokemons) { pokemon in
-                            VStack {
-                                NavigationLink(destination: PokemonDetailView(pokemon: pokemon)) {
-                                    Text(pokemon.name.capitalized)
-                                        .font(.headline)
-                                        .foregroundColor(.blue)
-                                        .frame(maxWidth: .infinity) // Make text tappable across the width
-                                        .contentShape(Rectangle()) // Make the entire text area tappable
-                                }
-
-                                Button(action: {
-                                    withAnimation {
-                                        viewModel.adicionarFavorito(pokemon: pokemon, context: context)
-                                    }
-                                }) {
-                                    Image(systemName: viewModel.isFavorito(pokemon: pokemon) ? "heart.fill" : "heart")
-                                        .resizable()
-                                        .scaledToFit()
-                                        .frame(width: 24, height: 24)
-                                        .foregroundColor(viewModel.isFavorito(pokemon: pokemon) ? .red : .gray)
-                                        .scaleEffect(viewModel.isFavorito(pokemon: pokemon) ? 1.2 : 1.0)
-                                        .animation(.easeInOut, value: viewModel.isFavorito(pokemon: pokemon))
-                                }
-                                .buttonStyle(PlainButtonStyle()) // Ensure button doesn't have default styling that might interfere
-                                .padding(.top, 8)
-                            }
+            List(viewModel.pokemons) { pokemon in
+                LazyVGrid(columns: columns, spacing: 16) {
+                    NavigationLink(destination: PokemonDetailView(pokemon: pokemon)) {
+                        Text(pokemon.name.capitalized)
                             .frame(maxWidth: .infinity)
                             .padding()
-                            .background(Color(.systemGray6))
-                            .cornerRadius(12)
-                        }
+                            .background(Color.blue.opacity(0.2))
+                            .cornerRadius(8)
                     }
-                    .padding(.vertical)
+                    
+                    Button(action: {
+                        withAnimation {
+                            viewModel.adicionarFavorito(pokemon: pokemon, context: context)
+                        }
+                    }) {
+                        Image(systemName: viewModel.isFavorito(pokemon: pokemon) ? "heart.fill" : "heart")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 24, height: 24)
+                            .foregroundColor(viewModel.isFavorito(pokemon: pokemon) ? .red : .gray)
+                            .scaleEffect(viewModel.isFavorito(pokemon: pokemon) ? 1.2 : 1.0)
+                            .animation(.easeInOut, value: viewModel.isFavorito(pokemon: pokemon))
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .padding(.top, 8)
                 }
             }
+            .padding(.vertical)
+        }
+    
+            .listStyle(PlainListStyle())
             .navigationTitle("Pokémons")
-            .task {
-                await viewModel.loadPokemons()
-                viewModel.loadFavoritos(context: context)
-            }
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     NavigationLink(destination: FavoritesView(userEmail: userEmail)) {
@@ -68,6 +58,12 @@ struct PokemonView: View {
                     }
                 }
             }
+            .onAppear {
+                Task {
+                    await viewModel.loadPokemons()
+                    viewModel.loadFavoritos(context: context)
+                }
+            }
         }
-    }
+    
 }

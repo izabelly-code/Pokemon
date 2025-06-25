@@ -36,16 +36,17 @@ struct PokemonListResponse: Codable {
     let results: [PokemonItem]
 }
 
-struct PokemonItem: Codable, Identifiable {
+struct PokemonItem: Codable, Identifiable, Hashable {
     let name: String
     let url: String
+    
     var id: Int {
-        if let number = url.split(separator: "/").last,
-           let id = Int(number) {
-            return id
+            if let number = url.split(separator: "/").last,
+               let id = Int(number) {
+                return id
+            }
+            return UUID().hashValue 
         }
-        return UUID().hashValue
-    }
     
 }
 
